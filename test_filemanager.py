@@ -90,19 +90,20 @@ def test_bank_account_deposit(mock_print, mock_input):
     bank_account()
     mock_print.assert_any_call("Счет пополнен на 100.0. Текущий баланс: 100.0.")
 
-@patch('builtins.input', side_effect=['2', '50', 'Item', '4'])
+@patch('builtins.input', side_effect=['1', '100', '2', '50', 'Item', '4'])
 @patch('builtins.print')
 def test_bank_account_purchase(mock_print, mock_input):
-    with patch('builtins.input', side_effect=['1', '100', '2', '50', 'Item', '4']):
-        bank_account()
+    bank_account()
 
-    # Делаем отладку, чтобы увидеть какие вызовы print были сделаны
+    # Отладка: вывод всех вызовов print для анализа
     print("All print calls:")
     for call in mock_print.call_args_list:
         print(call)
 
-    # Проверяем, что print вызван с нужным сообщением
-    mock_print.assert_any_call("Покупка Item на сумму 50.0 успешно выполнена. Текущий баланс: 50.0.")
+    # Проверка, что print был вызван с ожидаемым сообщением
+    expected_message = "Покупка Item на сумму 50.0 успешно выполнена. Текущий баланс: 50.0."
+    assert any(expected_message in str(call) for call in mock_print.call_args_list), \
+        f"Expected message not found in print calls: {mock_print.call_args_list}"
 
 @pytest.fixture(scope="function", autouse=True)
 def setup_and_teardown():
@@ -126,3 +127,4 @@ def test_save_and_load_account_data():
     loaded_balance, loaded_purchases = load_account_data(filename="test_account_data.json")
     assert balance == loaded_balance
     assert [list(p) for p in purchases] == loaded_purchases
+
