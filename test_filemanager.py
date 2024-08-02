@@ -6,7 +6,6 @@ from io import StringIO
 from file_manager import create_folder, delete_item, copy_item, list_directory_contents, \
                          list_folders, list_files, os_info, creator_info, change_directory, \
                          play_quiz, bank_account, load_account_data, save_account_data, save_directory_contents
-import unittest
 
 @pytest.fixture
 def setup_test_directory():
@@ -99,49 +98,48 @@ def test_bank_account_purchase(mock_print, mock_input):
         mock_print.assert_any_call("Покупка Item на сумму 50.0 успешно выполнена. Текущий баланс: 50.0.")
 
 
-class TestFileManager(unittest.TestCase):
+@pytest.fixture(scope="function", autouse=True)
+def setup_and_teardown():
+    account_filename = "test_account_data.json"
+    listdir_filename = "test_listdir.txt"
+    if os.path.exists(account_filename):
+        os.remove(account_filename)
+    if os.path.exists(listdir_filename):
+        os.remove(listdir_filename)
+    yield
+    if os.path.exists(account_filename):
+        os.remove(account_filename)
+    if os.path.exists(listdir_filename):
+        os.remove(listdir_filename)
 
-    def setUp(self):
-        # Удаляем тестовые файлы перед началом каждого теста
-        self.account_filename = "test_account_data.json"
-        self.listdir_filename = "test_listdir.txt"
-        if os.path.exists(self.account_filename):
-            os.remove(self.account_filename)
-        if os.path.exists(self.listdir_filename):
-            os.remove(self.listdir_filename)
+@patch('builtins.input', side_effect=['2', '50', 'Item', '4'])
+@patch('builtins.print')
+def test_bank_account_purchase(mock_print, mock_input):
+    with patch('builtins.input', side_effect=['1', '100', '2', '50', 'Item', '4']):
+        bank_account()
+    mock_print.assert_any_call("Покупка Item на сумму 50.0 успешно выполнена. Текущий баланс: 150.0.")
 
-    def test_save_and_load_account_data(self):
-        balance = 100.0
-        purchases = [("item1", 50.0), ("item2", 25.0)]
-        save_account_data(balance, purchases, filename=self.account_filename)
+def test_save_and_load_account_data():
+    balance = 100.0
+    purchases = [("item1", 50.0), ("item2", 25.0)]
+    save_account_data(balance, purchases, filename="test_account_data.json")
 
-        loaded_balance, loaded_purchases = load_account_data(filename=self.account_filename)
-        self.assertEqual(balance, loaded_balance)
-        self.assertEqual(purchases, loaded_purchases)
+    loaded_balance, loaded_purchases = load_account_data(filename="test_account_data.json")
+    assert balance == loaded_balance
+    assert [list(p) for p in purchases] == loaded_purchases
 
-    def test_save_directory_contents(self):
-        with open("test_file.txt", "w") as f:
-            f.write("test")
-        os.makedirs("test_dir", exist_ok=True)
+def test_save_directory_contents():
+    with open("test_file.txt", "w") as f:
+        f.write("test")
+    os.makedirs("test_dir", exist_ok=True)
 
-        save_directory_contents(filename=self.listdir_filename)
+    save_directory_contents(filename="test_listdir.txt")
 
-        with open(self.listdir_filename, "r") as f:
-            content = f.read()
+    with open("test_listdir.txt", "r") as f:
+        content = f.read()
 
-        self.assertIn("files: test_file.txt", content)
-        self.assertIn("dirs: test_dir", content)
+    assert "files: test_file.txt" in content
+    assert "dirs: test_dir" in content
 
-        os.remove("test_file.txt")
-        os.rmdir("test_dir")
-
-    def tearDown(self):
-        # Удаляем тестовые файлы после завершения каждого теста
-        if os.path.exists(self.account_filename):
-            os.remove(self.account_filename)
-        if os.path.exists(self.listdir_filename):
-            os.remove(self.listdir_filename)
-
-
-if __name__ == '__main__':
-    unittest.main()
+    os.remove("test_file.txt")
+    os.rmdir("test_dir")
