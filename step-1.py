@@ -1,6 +1,6 @@
 from file_manager import create_folder, delete_item, copy_item, list_directory_contents, \
                          list_folders, list_files, os_info, creator_info, change_directory, \
-                         play_quiz, bank_account
+                         play_quiz, bank_account, save_directory_contents
 
 def main_menu():
     while True:
@@ -39,7 +39,7 @@ def main_menu():
         elif choice == '9':
             change_directory()
         elif choice == '10':
-            guess_number()
+            play_quiz()
         elif choice == '11':
             bank_account()
         elif choice == '12':
@@ -51,4 +51,4 @@ def main_menu():
             print("Неверный пункт меню. Пожалуйста, выберите снова.")
 
 if __name__ == "__main__":
-    main()
+    main_menu()
