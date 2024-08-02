@@ -2,6 +2,23 @@ import os
 import shutil
 import platform
 import random
+import json
+
+def load_account_data(filename="account_data.json"):
+    try:
+        with open(filename, "r") as file:
+            data = json.load(file)
+            return data.get("balance", 0), data.get("purchases", [])
+    except FileNotFoundError:
+        return 0, []
+
+def save_account_data(balance, purchases, filename="account_data.json"):
+    data = {
+        "balance": balance,
+        "purchases": purchases
+    }
+    with open(filename, "w") as file:
+        json.dump(data, file)
 
 def create_folder():
     folder_name = input("Введите название папки: ")
@@ -33,6 +50,15 @@ def copy_item():
         print(f"Элемент {item_name} скопирован как {new_name}.")
     else:
         print(f"Элемент {item_name} не найден.")
+
+def save_directory_contents(filename="listdir.txt"):
+    files = [item for item in os.listdir() if os.path.isfile(item)]
+    dirs = [item for item in os.listdir() if os.path.isdir(item)]
+
+    with open(filename, "w") as file:
+        file.write("files: " + ", ".join(files) + "\n")
+        file.write("dirs: " + ", ".join(dirs) + "\n")
+    print(f"Содержимое рабочей директории сохранено в {filename}.")
 
 def list_directory_contents():
     for item in os.listdir():
@@ -125,8 +151,7 @@ def play_quiz():
             break
 
 def bank_account():
-    balance = 0
-    purchases = []
+    balance, purchases = load_account_data()
 
     def add_funds(amount):
         nonlocal balance
@@ -173,7 +198,8 @@ def bank_account():
         elif choice == '3':
             show_purchase_history()
         elif choice == '4':
-            print("Выход из программы.")
+            save_account_data(balance, purchases)
+            print("Данные сохранены. Выход из программы.")
             break
         else:
             print("Неверный пункт меню. Пожалуйста, выберите снова.")
