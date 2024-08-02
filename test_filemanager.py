@@ -7,7 +7,6 @@ from file_manager import create_folder, delete_item, copy_item, list_directory_c
     list_folders, list_files, os_info, creator_info, change_directory, \
     play_quiz, bank_account, load_account_data, save_account_data, save_directory_contents
 
-
 @pytest.fixture
 def setup_test_directory():
     test_dir = 'test_dir'
@@ -20,7 +19,6 @@ def setup_test_directory():
     if os.path.exists(test_dir):
         shutil.rmtree(test_dir)
 
-
 @patch('builtins.input', return_value='test_folder')
 @patch('builtins.print')
 def test_create_folder(mock_print, mock_input):
@@ -28,13 +26,11 @@ def test_create_folder(mock_print, mock_input):
     assert os.path.exists('test_folder')
     shutil.rmtree('test_folder')
 
-
 @patch('builtins.input', return_value='nonexistent_item')
 @patch('builtins.print')
 def test_delete_nonexistent_item(mock_print, mock_input):
     delete_item()
     mock_print.assert_called_with('Элемент nonexistent_item не найден.')
-
 
 @patch('builtins.input', side_effect=['test_file.txt', 'test_file_copy.txt'])
 @patch('builtins.print')
@@ -43,14 +39,12 @@ def test_copy_item(mock_print, mock_input, setup_test_directory):
     copy_item()
     assert os.path.exists('test_file_copy.txt')
 
-
 def test_list_directory_contents(setup_test_directory):
     with patch('sys.stdout', new_callable=lambda: StringIO()) as fake_out:
         os.chdir(setup_test_directory)
         list_directory_contents()
         output = fake_out.getvalue().strip()
         assert 'test_file.txt' in output
-
 
 def test_list_folders(setup_test_directory):
     with patch('sys.stdout', new_callable=lambda: StringIO()) as fake_out:
@@ -60,7 +54,6 @@ def test_list_folders(setup_test_directory):
         output = fake_out.getvalue().strip()
         assert 'test_folder' in output
 
-
 def test_list_files(setup_test_directory):
     with patch('sys.stdout', new_callable=lambda: StringIO()) as fake_out:
         os.chdir(setup_test_directory)
@@ -68,18 +61,15 @@ def test_list_files(setup_test_directory):
         output = fake_out.getvalue().strip()
         assert 'test_file.txt' in output
 
-
 @patch('builtins.print')
 def test_os_info(mock_print):
     os_info()
     mock_print.assert_called()
 
-
 @patch('builtins.print')
 def test_creator_info(mock_print):
     creator_info()
     mock_print.assert_called_with('Программа создана Светланой Флегонтовой.')
-
 
 @patch('builtins.input', return_value='nonexistent_directory')
 @patch('builtins.print')
@@ -87,34 +77,12 @@ def test_change_directory_not_found(mock_print, mock_input):
     change_directory()
     mock_print.assert_called_with('Указанный путь не найден.')
 
-
 @patch('builtins.input', return_value='14.03.1879')
 @patch('builtins.print')
 def test_play_quiz_correct_answer(mock_print, mock_input):
     with patch('random.sample', return_value=[('Альберт Эйнштейн', '14.03.1879')]):
         play_quiz()
         mock_print.assert_any_call("Правильно!")
-
-
-@patch('builtins.input', side_effect=['1', '100', '4'])
-@patch('builtins.print')
-def test_bank_account_deposit(mock_print, mock_input):
-    bank_account()
-    mock_print.assert_any_call("Счет пополнен на 100.0. Текущий баланс: 100.0.")
-
-
-@patch('builtins.input', side_effect=['1', '100', '2', '50', 'Item', '4'])
-@patch('builtins.print')
-def test_bank_account_purchase(mock_print, mock_input):
-    bank_account()
-
-    # Упростим проверку, удалим отладочный вывод
-    expected_message = "Покупка Item на сумму 50.0 успешно выполнена. Текущий баланс: 50.0."
-
-    # Проверяем наличие ожидаемого сообщения
-    found = any(expected_message in str(call) for call in mock_print.call_args_list)
-    assert found, f"Expected message not found in print calls: {mock_print.call_args_list}"
-
 
 @pytest.fixture(scope="function", autouse=True)
 def setup_and_teardown():
@@ -130,6 +98,29 @@ def setup_and_teardown():
     if os.path.exists(listdir_filename):
         os.remove(listdir_filename)
 
+@patch('builtins.input', side_effect=['1', '100', '4'])
+@patch('builtins.print')
+def test_bank_account_deposit(mock_print, mock_input):
+    bank_account()
+    mock_print.assert_any_call("Счет пополнен на 100.0. Текущий баланс: 100.0.")
+
+@patch('builtins.input', side_effect=['1', '100', '2', '50', 'Item', '4'])
+@patch('builtins.print')
+def test_bank_account_purchase(mock_print, mock_input):
+    # Принудительно задаем начальный баланс и ожидаемое изменение
+    initial_balance = 100.0
+    purchase_amount = 50.0
+    expected_balance = initial_balance - purchase_amount
+    expected_message = f"Покупка Item на сумму {purchase_amount} успешно выполнена. Текущий баланс: {expected_balance}."
+
+    # Запускаем функцию
+    bank_account()
+
+    # Получаем все вызовы print
+    print_calls = [call[0][0] for call in mock_print.call_args_list]
+
+    # Проверяем наличие ожидаемого сообщения
+    assert expected_message in print_calls, f"Expected message not found. Calls: {print_calls}"
 
 def test_save_and_load_account_data():
     balance = 100.0
@@ -139,4 +130,3 @@ def test_save_and_load_account_data():
     loaded_balance, loaded_purchases = load_account_data(filename="test_account_data.json")
     assert balance == loaded_balance
     assert [list(p) for p in purchases] == loaded_purchases
-
