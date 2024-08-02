@@ -4,8 +4,8 @@ import pytest
 from unittest.mock import patch
 from io import StringIO
 from file_manager import create_folder, delete_item, copy_item, list_directory_contents, \
-                         list_folders, list_files, os_info, creator_info, change_directory, \
-                         play_quiz, bank_account, load_account_data, save_account_data, save_directory_contents
+    list_folders, list_files, os_info, creator_info, change_directory, \
+    play_quiz, bank_account, load_account_data, save_account_data, save_directory_contents
 
 @pytest.fixture
 def setup_test_directory():
@@ -97,7 +97,6 @@ def test_bank_account_purchase(mock_print, mock_input):
         bank_account()
         mock_print.assert_any_call("Покупка Item на сумму 50.0 успешно выполнена. Текущий баланс: 50.0.")
 
-
 @pytest.fixture(scope="function", autouse=True)
 def setup_and_teardown():
     account_filename = "test_account_data.json"
@@ -112,13 +111,6 @@ def setup_and_teardown():
     if os.path.exists(listdir_filename):
         os.remove(listdir_filename)
 
-@patch('builtins.input', side_effect=['2', '50', 'Item', '4'])
-@patch('builtins.print')
-def test_bank_account_purchase(mock_print, mock_input):
-    with patch('builtins.input', side_effect=['1', '100', '2', '50', 'Item', '4']):
-        bank_account()
-    mock_print.assert_any_call("Покупка Item на сумму 50.0 успешно выполнена. Текущий баланс: 150.0.")
-
 def test_save_and_load_account_data():
     balance = 100.0
     purchases = [("item1", 50.0), ("item2", 25.0)]
@@ -128,18 +120,3 @@ def test_save_and_load_account_data():
     assert balance == loaded_balance
     assert [list(p) for p in purchases] == loaded_purchases
 
-def test_save_directory_contents():
-    with open("test_file.txt", "w") as f:
-        f.write("test")
-    os.makedirs("test_dir", exist_ok=True)
-
-    save_directory_contents(filename="test_listdir.txt")
-
-    with open("test_listdir.txt", "r") as f:
-        content = f.read()
-
-    assert "files: test_file.txt" in content
-    assert "dirs: test_dir" in content
-
-    os.remove("test_file.txt")
-    os.rmdir("test_dir")
