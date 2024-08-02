@@ -95,7 +95,14 @@ def test_bank_account_deposit(mock_print, mock_input):
 def test_bank_account_purchase(mock_print, mock_input):
     with patch('builtins.input', side_effect=['1', '100', '2', '50', 'Item', '4']):
         bank_account()
-        mock_print.assert_any_call("Покупка Item на сумму 50.0 успешно выполнена. Текущий баланс: 50.0.")
+
+    # Делаем отладку, чтобы увидеть какие вызовы print были сделаны
+    print("All print calls:")
+    for call in mock_print.call_args_list:
+        print(call)
+
+    # Проверяем, что print вызван с нужным сообщением
+    mock_print.assert_any_call("Покупка Item на сумму 50.0 успешно выполнена. Текущий баланс: 50.0.")
 
 @pytest.fixture(scope="function", autouse=True)
 def setup_and_teardown():
@@ -119,4 +126,3 @@ def test_save_and_load_account_data():
     loaded_balance, loaded_purchases = load_account_data(filename="test_account_data.json")
     assert balance == loaded_balance
     assert [list(p) for p in purchases] == loaded_purchases
-
