@@ -5,7 +5,6 @@ import random
 import json
 from functools import wraps
 
-
 def handle_exceptions(func):
     @wraps(func)
     def wrapper(*args, **kwargs):
@@ -15,7 +14,6 @@ def handle_exceptions(func):
             print(f"An error occurred: {e}")
     return wrapper
 
-
 def load_account_data(filename="account_data.json"):
     try:
         with open(filename, "r") as file:
@@ -24,7 +22,6 @@ def load_account_data(filename="account_data.json"):
     except FileNotFoundError:
         return 0, []
 
-
 def save_account_data(balance, purchases, filename="account_data.json"):
     data = {
         "balance": balance,
@@ -32,7 +29,6 @@ def save_account_data(balance, purchases, filename="account_data.json"):
     }
     with open(filename, "w") as file:
         json.dump(data, file)
-
 
 @handle_exceptions
 def create_folder():
@@ -43,7 +39,6 @@ def create_folder():
     else:
         print(f"Папка {folder_name} уже существует.")
 
-
 @handle_exceptions
 def delete_item():
     item_name = input("Введите название файла или папки для удаления: ")
@@ -52,7 +47,6 @@ def delete_item():
         print(f"Элемент {item_name} удален.")
     else:
         print(f"Элемент {item_name} не найден.")
-
 
 @handle_exceptions
 def copy_item():
@@ -64,23 +58,54 @@ def copy_item():
     else:
         print(f"Элемент {item_name} не найден.")
 
+@handle_exceptions
+def list_directory_contents():
+    for item in os.listdir():
+        print(item)
+
+@handle_exceptions
+def list_folders():
+    for item in os.listdir():
+        if os.path.isdir(item):
+            print(item)
+
+@handle_exceptions
+def list_files():
+    for item in os.listdir():
+        if os.path.isfile(item):
+            print(item)
+
+@handle_exceptions
+def show_system_info():
+    print(f"Операционная система: {platform.system()}")
+    print(f"Имя компьютера: {platform.node()}")
+    print(f"Процессор: {platform.processor()}")
 
 @handle_exceptions
 def save_directory_contents(filename="listdir.txt"):
-    files = (item for item in os.listdir() if os.path.isfile(item))
-    dirs = (item for item in os.listdir() if os.path.isdir(item))
+    files = [item for item in os.listdir() if os.path.isfile(item)]
+    dirs = [item for item in os.listdir() if os.path.isdir(item)]
 
     with open(filename, "w") as file:
         file.write("files: " + ", ".join(files) + "\n")
         file.write("dirs: " + ", ".join(dirs) + "\n")
     print(f"Содержимое текущей директории сохранено в {filename}.")
 
+def creator_info():
+    print("Программа создана Светланой Флегонтовой.")
 
-def show_system_info():
-    print(f"Операционная система: {platform.system()}")
-    print(f"Имя компьютера: {platform.node()}")
-    print(f"Процессор: {platform.processor()}")
-
+@handle_exceptions
+def change_directory():
+    new_path = input("Введите путь к новой рабочей директории: ")
+    try:
+        os.chdir(new_path)
+        print(f"Рабочая директория изменена на {new_path}.")
+    except FileNotFoundError:
+        print("Указанный путь не найден.")
+    except NotADirectoryError:
+        print("Указанный путь не является директорией.")
+    except PermissionError:
+        print("Недостаточно прав для доступа к указанной директории.")
 
 @handle_exceptions
 def play_quiz():
@@ -142,7 +167,6 @@ def play_quiz():
             print(f"Произошла ошибка: {e}")
             break
 
-
 def bank_account():
     balance, purchases = load_account_data()
 
@@ -192,8 +216,7 @@ def bank_account():
             show_purchase_history()
         elif choice == '4':
             save_account_data(balance, purchases)
-            print("Данные сохранены. Выход из программы.")
+            print(f"Баланс: {balance}. История покупок сохранена.")
             break
         else:
-            print("Неверный пункт меню. Пожалуйста, выберите снова.")
-
+            print("Неверный выбор. Пожалуйста, выберите снова.")

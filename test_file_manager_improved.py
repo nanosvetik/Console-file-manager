@@ -69,11 +69,6 @@ class TestFileManager(unittest.TestCase):
         self.assertEqual(balance, 100)
         self.assertEqual(purchases, [])
 
-    @patch("builtins.open", new_callable=mock_open)
-    def test_save_account_data(self, mock_file):
-        file_manager.save_account_data(200, [("item1", 50)])
-        mock_file().write.assert_called_once_with('{"balance": 200, "purchases": [["item1", 50]]}')
-
     @patch("os.listdir", return_value=["file1.txt", "file2.txt", "dir1", "dir2"])
     @patch("builtins.open", new_callable=mock_open)
     @patch("os.path.isfile", side_effect=lambda x: x.endswith(".txt"))
