@@ -15,6 +15,15 @@ def handle_exceptions(func):
             print(f"An error occurred: {e}")
     return wrapper
 
+def list_directory_contents():
+    for item in os.listdir():
+        print(item)
+
+def list_folders():
+    for item in os.listdir():
+        if os.path.isdir(item):
+            print(item)
+
 
 def load_account_data(filename="account_data.json"):
     try:
