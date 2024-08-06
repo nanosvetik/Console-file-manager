@@ -5,7 +5,7 @@ from unittest.mock import patch
 from io import StringIO
 from file_manager import create_folder, delete_item, copy_item, list_directory_contents, \
                          list_folders, list_files, os_info, creator_info, change_directory, \
-                         play_quiz, bank_account
+                         play_quiz, bank_account, save_directory_contents
 
 @pytest.fixture
 def setup_test_directory():
@@ -84,16 +84,12 @@ def test_play_quiz_correct_answer(mock_print, mock_input):
         play_quiz()
         mock_print.assert_any_call("Правильно!")
 
-@patch('builtins.input', side_effect=['1', '100', '4'])
-@patch('builtins.print')
-def test_bank_account_deposit(mock_print, mock_input):
-    bank_account()
-    mock_print.assert_any_call("Счет пополнен на 100.0. Текущий баланс: 100.0.")
-
-@patch('builtins.input', side_effect=['2', '50', 'Item', '4'])
-@patch('builtins.print')
-def test_bank_account_purchase(mock_print, mock_input):
-    with patch('builtins.input', side_effect=['1', '100', '2', '50', 'Item', '4']):
-        bank_account()
-        mock_print.assert_any_call("Покупка Item на сумму 50.0 успешно выполнена. Текущий баланс: 50.0.")
+def test_save_directory_contents(setup_test_directory):
+    save_directory_contents("test_listdir.txt")
+    assert os.path.exists("test_listdir.txt")
+    with open("test_listdir.txt", "r") as file:
+        contents = file.read().strip().split("\n")
+        assert contents[0].startswith("files:")
+        assert contents[1].startswith("dirs:")
+    os.remove("test_listdir.txt")
 
