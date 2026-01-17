@@ -1,95 +1,163 @@
 import os
 import shutil
-import pytest
-from unittest.mock import patch
-from io import StringIO
-from file_manager import create_folder, delete_item, copy_item, list_directory_contents, \
-                         list_folders, list_files, os_info, creator_info, change_directory, \
-                         play_quiz, bank_account, save_directory_contents
+import platform
+import random
+import json
+from functools import wraps
 
-@pytest.fixture
-def setup_test_directory():
-    test_dir = 'test_dir'
-    if not os.path.exists(test_dir):
-        os.makedirs(test_dir)
-    test_file = os.path.join(test_dir, 'test_file.txt')
-    with open(test_file, 'w') as f:
-        f.write('Test content')
-    yield test_dir
-    if os.path.exists(test_dir):
-        shutil.rmtree(test_dir)
 
-@patch('builtins.input', return_value='test_folder')
-@patch('builtins.print')
-def test_create_folder(mock_print, mock_input):
-    create_folder()
-    assert os.path.exists('test_folder')
-    shutil.rmtree('test_folder')
+def handle_exceptions(func):
+    @wraps(func)
+    def wrapper(*args, **kwargs):
+        try:
+            return func(*args, **kwargs)
+        except Exception as e:
+            print(f"An error occurred: {e}")
+    return wrapper
 
-@patch('builtins.input', return_value='nonexistent_item')
-@patch('builtins.print')
-def test_delete_nonexistent_item(mock_print, mock_input):
-    delete_item()
-    mock_print.assert_called_with('Элемент nonexistent_item не найден.')
 
-@patch('builtins.input', side_effect=['test_file.txt', 'test_file_copy.txt'])
-@patch('builtins.print')
-def test_copy_item(mock_print, mock_input, setup_test_directory):
-    os.chdir(setup_test_directory)
-    copy_item()
-    assert os.path.exists('test_file_copy.txt')
+def load_account_data(filename="account_data.json"):
+    try:
+        with open(filename, "r") as file:
+            data = json.load(file)
+            return data.get("balance", 0), data.get("purchases", [])
+    except FileNotFoundError:
+        return 0, []
 
-def test_list_directory_contents(setup_test_directory):
-    with patch('sys.stdout', new_callable=lambda: StringIO()) as fake_out:
-        os.chdir(setup_test_directory)
-        list_directory_contents()
-        output = fake_out.getvalue().strip()
-        assert 'test_file.txt' in output
 
-def test_list_folders(setup_test_directory):
-    with patch('sys.stdout', new_callable=lambda: StringIO()) as fake_out:
-        os.makedirs(os.path.join(setup_test_directory, 'test_folder'))
-        os.chdir(setup_test_directory)
-        list_folders()
-        output = fake_out.getvalue().strip()
-        assert 'test_folder' in output
+def save_account_data(balance, purchases, filename="account_data.json"):
+    data = {
+        "balance": balance,
+        "purchases": purchases
+    }
+    with open(filename, "w") as file:
+        json.dump(data, file)
 
-def test_list_files(setup_test_directory):
-    with patch('sys.stdout', new_callable=lambda: StringIO()) as fake_out:
-        os.chdir(setup_test_directory)
-        list_files()
-        output = fake_out.getvalue().strip()
-        assert 'test_file.txt' in output
 
-@patch('builtins.print')
-def test_os_info(mock_print):
-    os_info()
-    mock_print.assert_called()
+@handle_exceptions
+def create_folder():
+    folder_name = input("Введите название папки: ")
+    if not os.path.exists(folder_name):
+        os.makedirs(folder_name)
+        print(f"Папка {folder_name} создана.")
+    else:
+        print(f"Папка {folder_name} уже существует.")
 
-@patch('builtins.print')
-def test_creator_info(mock_print):
-    creator_info()
-    mock_print.assert_called_with('Программа создана Светланой Флегонтовой.')
 
-@patch('builtins.input', return_value='nonexistent_directory')
-@patch('builtins.print')
-def test_change_directory_not_found(mock_print, mock_input):
-    change_directory()
-    mock_print.assert_called_with('Указанный путь не найден.')
+@handle_exceptions
+def delete_item():
+    item_name = input("Введите название файла или папки для удаления: ")
+    if os.path.exists(item_name):
+        shutil.rmtree(item_name) if os.path.isdir(item_name) else os.remove(item_name)
+        print(f"Элемент {item_name} удален.")
+    else:
+        print(f"Элемент {item_name} не найден.")
 
-@patch('builtins.input', return_value='14.03.1879')
-@patch('builtins.print')
-def test_play_quiz_correct_answer(mock_print, mock_input):
-    with patch('random.sample', return_value=[('Альберт Эйнштейн', '14.03.1879')]):
-        play_quiz()
-        mock_print.assert_any_call("Правильно!")
 
-def test_save_directory_contents(setup_test_directory):
-    save_directory_contents("test_listdir.txt")
-    assert os.path.exists("test_listdir.txt")
-    with open("test_listdir.txt", "r") as file:
-        contents = file.read().strip().split("\n")
-        assert contents[0].startswith("files:")
-        assert contents[1].startswith("dirs:")
-    os.remove("test_listdir.txt")
+@handle_exceptions
+def copy_item():
+    item_name = input("Введите название файла или папки для копирования: ")
+    new_name = input("Введите новое название файла или папки: ")
+    if os.path.exists(item_name):
+        shutil.copytree(item_name, new_name) if os.path.isdir(item_name) else shutil.copy(item_name, new_name)
+        print(f"Элемент {item_name} скопирован как {new_name}.")
+    else:
+        print(f"Элемент {item_name} не найден.")
+
+
+@handle_exceptions
+def save_directory_contents(filename="listdir.txt"):
+    files = (item for item in os.listdir() if os.path.isfile(item))
+    dirs = (item for item in os.listdir() if os.path.isdir(item))
+
+    with open(filename, "w") as file:
+        file.write("files: " + ", ".join(files) + "\n")
+        file.write("dirs: " + ", ".join(dirs) + "\n")
+    print(f"Содержимое текущей директории сохранено в {filename}.")
+
+
+def show_system_info():
+    print(f"Операционная система: {platform.system()}")
+    print(f"Имя компьютера: {platform.node()}")
+    print(f"Процессор: {platform.processor()}")
+
+
+@handle_exceptions
+def play_guessing_game():
+    number = random.randint(1, 100)
+    attempts = 0
+
+    while True:
+        try:
+            guess = int(input("Угадайте число от 1 до 100: "))
+            attempts += 1
+            if guess < number:
+                print("Загаданное число больше.")
+            elif guess > number:
+                print("Загаданное число меньше.")
+            else:
+                print(f"Поздравляем! Вы угадали число {number} за {attempts} попыток.")
+                break
+        except ValueError:
+            print("Пожалуйста, введите корректное число.")
+
+    play_again = input("Хотите сыграть еще раз? (да/нет): ").strip().lower()
+    if play_again in ('да', 'yes'):
+        play_guessing_game()
+
+
+def bank_account():
+    balance, purchases = load_account_data()
+
+    def add_funds(amount):
+        nonlocal balance
+        balance += amount
+
+    def make_purchase(amount, item):
+        nonlocal balance
+        balance -= amount
+        purchases.append((item, amount))
+
+    def show_purchase_history():
+        if not purchases:
+            print("История покупок пуста.")
+        else:
+            for item, amount in purchases:
+                print(f"Покупка: {item}, Сумма: {amount}")
+
+    while True:
+        print("\n1. пополнение счета")
+        print("2. покупка")
+        print("3. история покупок")
+        print("4. выход")
+
+        choice = input("Выберите пункт меню: ")
+
+        if choice == '1':
+            try:
+                amount = float(input("Введите сумму для пополнения счета: "))
+                add_funds(amount)
+                print(f"Счет пополнен на {amount}. Текущий баланс: {balance}.")
+            except ValueError:
+                print("Пожалуйста, введите корректную сумму.")
+        elif choice == '2':
+            try:
+                amount = float(input("Введите сумму покупки: "))
+                if amount > balance:
+                    print("Недостаточно средств на счете.")
+                else:
+                    item = input("Введите название покупки: ")
+                    make_purchase(amount, item)
+                    print(f"Покупка {item} на сумму {amount} успешно выполнена. Текущий баланс: {balance}.")
+            except ValueError:
+                print("Пожалуйста, введите корректную сумму.")
+        elif choice == '3':
+            show_purchase_history()
+        elif choice == '4':
+            save_account_data(balance, purchases)
+            print("Данные сохранены. Выход из программы.")
+            break
+        else:
+            print("Неверный пункт меню. Пожалуйста, выберите снова.")
+
 

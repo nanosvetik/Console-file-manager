@@ -3,6 +3,16 @@ import shutil
 import platform
 import random
 import json
+from functools import wraps
+
+def handle_exceptions(func):
+    @wraps(func)
+    def wrapper(*args, **kwargs):
+        try:
+            return func(*args, **kwargs)
+        except Exception as e:
+            print(f"An error occurred: {e}")
+    return wrapper
 
 def load_account_data(filename="account_data.json"):
     try:
@@ -20,6 +30,7 @@ def save_account_data(balance, purchases, filename="account_data.json"):
     with open(filename, "w") as file:
         json.dump(data, file)
 
+@handle_exceptions
 def create_folder():
     folder_name = input("Введите название папки: ")
     if not os.path.exists(folder_name):
@@ -28,29 +39,49 @@ def create_folder():
     else:
         print(f"Папка {folder_name} уже существует.")
 
+@handle_exceptions
 def delete_item():
     item_name = input("Введите название файла или папки для удаления: ")
     if os.path.exists(item_name):
-        if os.path.isdir(item_name):
-            shutil.rmtree(item_name)
-        else:
-            os.remove(item_name)
+        shutil.rmtree(item_name) if os.path.isdir(item_name) else os.remove(item_name)
         print(f"Элемент {item_name} удален.")
     else:
         print(f"Элемент {item_name} не найден.")
 
+@handle_exceptions
 def copy_item():
     item_name = input("Введите название файла или папки для копирования: ")
     new_name = input("Введите новое название файла или папки: ")
     if os.path.exists(item_name):
-        if os.path.isdir(item_name):
-            shutil.copytree(item_name, new_name)
-        else:
-            shutil.copy(item_name, new_name)
+        shutil.copytree(item_name, new_name) if os.path.isdir(item_name) else shutil.copy(item_name, new_name)
         print(f"Элемент {item_name} скопирован как {new_name}.")
     else:
         print(f"Элемент {item_name} не найден.")
 
+@handle_exceptions
+def list_directory_contents():
+    for item in os.listdir():
+        print(item)
+
+@handle_exceptions
+def list_folders():
+    for item in os.listdir():
+        if os.path.isdir(item):
+            print(item)
+
+@handle_exceptions
+def list_files():
+    for item in os.listdir():
+        if os.path.isfile(item):
+            print(item)
+
+@handle_exceptions
+def show_system_info():
+    print(f"Операционная система: {platform.system()}")
+    print(f"Имя компьютера: {platform.node()}")
+    print(f"Процессор: {platform.processor()}")
+
+@handle_exceptions
 def save_directory_contents(filename="listdir.txt"):
     files = [item for item in os.listdir() if os.path.isfile(item)]
     dirs = [item for item in os.listdir() if os.path.isdir(item)]
@@ -58,28 +89,12 @@ def save_directory_contents(filename="listdir.txt"):
     with open(filename, "w") as file:
         file.write("files: " + ", ".join(files) + "\n")
         file.write("dirs: " + ", ".join(dirs) + "\n")
-    print(f"Содержимое рабочей директории сохранено в {filename}.")
-
-def list_directory_contents():
-    for item in os.listdir():
-        print(item)
-
-def list_folders():
-    for item in os.listdir():
-        if os.path.isdir(item):
-            print(item)
-
-def list_files():
-    for item in os.listdir():
-        if os.path.isfile(item):
-            print(item)
-
-def os_info():
-    print(platform.platform())
+    print(f"Содержимое текущей директории сохранено в {filename}.")
 
 def creator_info():
     print("Программа создана Светланой Флегонтовой.")
 
+@handle_exceptions
 def change_directory():
     new_path = input("Введите путь к новой рабочей директории: ")
     try:
@@ -92,6 +107,7 @@ def change_directory():
     except PermissionError:
         print("Недостаточно прав для доступа к указанной директории.")
 
+@handle_exceptions
 def play_quiz():
     people = {
         'В.И Ленин': '22.04.1870',
@@ -128,11 +144,8 @@ def play_quiz():
 
         print("Отгадайте даты рождения для следующих известных людей:")
 
-        for i in range(total_questions):
-            name = selected_names[i]
-            correct_birth_date = selected_birth_dates[i]
-
-            print(f"{i + 1}. В каком году родился {name}? (введите в формате dd.mm.yyyy): ")
+        for i, (name, correct_birth_date) in enumerate(zip(selected_names, selected_birth_dates), 1):
+            print(f"{i}. В каком году родился {name}? (введите в формате dd.mm.yyyy): ")
             user_input = input()
 
             if user_input == correct_birth_date:
@@ -143,11 +156,15 @@ def play_quiz():
 
         print(f'\nКоличество правильных ответов: {correct_count}')
         print(f'Количество неправильных ответов: {total_questions - correct_count}')
-        print(f'Процент правильных ответов: {correct_count * (100 / total_questions)}%')
-        print(f'Процент неправильных ответов: {(total_questions - correct_count) * (100 / total_questions)}%')
+        print(f'Процент правильных ответов: {correct_count * (100 / total_questions):.2f}%')
+        print(f'Процент неправильных ответов: {(total_questions - correct_count) * (100 / total_questions):.2f}%')
 
-        play_again = input('\nХотите начать игру заново? (Да/нет): ').strip().lower()
-        if play_again != 'да' and play_again != 'yes':
+        try:
+            play_again = input('\nХотите начать игру заново? (Да/нет): ').strip().lower()
+            if play_again not in ('да', 'yes'):
+                break
+        except Exception as e:
+            print(f"Произошла ошибка: {e}")
             break
 
 def bank_account():
@@ -199,7 +216,7 @@ def bank_account():
             show_purchase_history()
         elif choice == '4':
             save_account_data(balance, purchases)
-            print("Данные сохранены. Выход из программы.")
+            print(f"Баланс: {balance}. История покупок сохранена.")
             break
         else:
-            print("Неверный пункт меню. Пожалуйста, выберите снова.")
+            print("Неверный выбор. Пожалуйста, выберите снова.")

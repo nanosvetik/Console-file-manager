@@ -1,5 +1,5 @@
 from file_manager import create_folder, delete_item, copy_item, list_directory_contents, \
-                         list_folders, list_files, os_info, creator_info, change_directory, \
+                         list_folders, list_files, show_system_info, creator_info, change_directory, \
                          play_quiz, bank_account, save_directory_contents
 
 def main_menu():
@@ -33,7 +33,7 @@ def main_menu():
         elif choice == '6':
             list_files()
         elif choice == '7':
-            os_info()
+            show_system_info()
         elif choice == '8':
             creator_info()
         elif choice == '9':
